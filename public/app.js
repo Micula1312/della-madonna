@@ -26,7 +26,7 @@ if(admin)refreshLocks(s);const key=s.active?`${s.active.id}:${s.active.until}`:n
 let scratchSession=0;
 function attachScratch(button,id){button.onclick=()=>openScratch(id);}
 async function openScratch(id){
- const epoch=state.epoch,session=++scratchSession,dialog=$('#scratch-dialog'),canvas=$('#scratch'),ctx=canvas.getContext('2d');let drawing=false,last=null,checks=0,done=false;
+ const epoch=state.epoch,session=++scratchSession,dialog=$('#scratch-dialog'),canvas=$('#scratch'),ctx=canvas.getContext('2d');let drawing=false,last=null,checks=0,done=false,scratchPromise=null;
  try{const response=await fetch(`/api/peek?id=${id}`);if(!response.ok)throw Error('Contenuto non disponibile');const data=await response.json();if(session!==scratchSession||state.epoch!==epoch)return;
  fill($('#scratch-under'),data.content);canvas.width=720;canvas.height=720;ctx.globalCompositeOperation='source-over';ctx.fillStyle='#7394c4';ctx.fillRect(0,0,720,720);
  // Light paper grain, with the same scattered snow marks as the calendar.
@@ -34,8 +34,19 @@ async function openScratch(id){
  ctx.fillStyle='#f6eedb';ctx.font='900 200px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(id),360,370);
  for(const [x,y] of [[65,80],[580,130],[140,580],[630,625],[480,65]]){ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();}
  ctx.globalCompositeOperation='destination-out';ctx.lineWidth=85;ctx.lineCap='round';dialog.showModal();canvas.focus();
- async function rub(x,y){if(done||!online||state.paused||state.epoch!==epoch||session!==scratchSession)return;ctx.beginPath();ctx.moveTo(last?.x??x,last?.y??y);ctx.lineTo(x,y);ctx.stroke();last={x,y};if(++checks%4!==0)return;const pixels=ctx.getImageData(0,0,720,720).data;let erased=0;for(let i=3;i<pixels.length;i+=16)if(pixels[i]<128)erased++;if(erased/(pixels.length/16)<.78)return;
- done=true;drawing=false;try{await action('open',{id,epoch});if(session===scratchSession)dialog.close();}catch(error){done=false;$('#notice').textContent=error.message;dialog.close();}}
+ const source=document.querySelector(`[data-id="${id}"]`).getBoundingClientRect(),dest=dialog.getBoundingClientRect();
+ dialog.classList.remove('teletext-opening');void dialog.offsetWidth;dialog.classList.add('teletext-opening');
+ if(!reduced)dialog.animate([
+ {transform:`translate(${source.left+source.width/2-dest.left-dest.width/2}px,${source.top+source.height/2-dest.top-dest.height/2}px) scale(${source.width/dest.width},${source.height/dest.height})`,filter:'saturate(2)'},
+ {transform:'translate(-12px,6px) scale(1.05,.91)',offset:.65,filter:'saturate(2)'},
+ {transform:'translate(7px,-3px) scale(.98,1.02)',offset:.85,filter:'saturate(1.4)'},
+ {transform:'translate(0,0) scale(1)',filter:'saturate(1)'}
+ ],{duration:650,easing:'steps(7,end)'});
+ setTimeout(()=>{if(session===scratchSession)dialog.classList.remove('teletext-opening');},700);
+ async function rub(x,y){if(done||!online||state.paused||state.epoch!==epoch||session!==scratchSession)return;ctx.beginPath();ctx.moveTo(last?.x??x,last?.y??y);ctx.lineTo(x,y);ctx.stroke();last={x,y};
+ if(!scratchPromise){scratchPromise=action('scratch',{id,epoch}).catch(error=>{scratchPromise=null;$('#notice').textContent=error.message;throw error;});scratchPromise.catch(()=>{});}
+ if(++checks%4!==0)return;const pixels=ctx.getImageData(0,0,720,720).data;let erased=0;for(let i=3;i<pixels.length;i+=16)if(pixels[i]<128)erased++;if(erased/(pixels.length/16)<.78)return;
+ done=true;drawing=false;try{await scratchPromise;if(session!==scratchSession||state.epoch!==epoch)return;await action('open',{id,epoch});if(session===scratchSession)dialog.close();}catch(error){done=false;$('#notice').textContent=error.message;dialog.close();}}
  function point(e){const r=canvas.getBoundingClientRect();rub((e.clientX-r.left)*720/r.width,(e.clientY-r.top)*720/r.height);}
  canvas.onpointerdown=e=>{drawing=true;last=null;canvas.setPointerCapture(e.pointerId);point(e);};canvas.onpointermove=e=>{if(drawing)point(e);};canvas.onpointerup=canvas.onpointercancel=()=>{drawing=false;last=null;};
  let cursor={x:360,y:360};canvas.onkeydown=e=>{const moves={ArrowLeft:[-38,0],ArrowRight:[38,0],ArrowUp:[0,-38],ArrowDown:[0,38]};if(!moves[e.key])return;e.preventDefault();cursor.x=Math.max(0,Math.min(720,cursor.x+moves[e.key][0]));cursor.y=Math.max(0,Math.min(720,cursor.y+moves[e.key][1]));rub(cursor.x,cursor.y);};

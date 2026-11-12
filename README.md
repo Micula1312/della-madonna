@@ -57,3 +57,7 @@ Aspetto pubblico ispirato a un calendario di carta: azzurro, numeri avorio, gran
 Aprire `/regia`, inserire la chiave stampata dal server e premere **Carica contenuti**. Ogni casella ha un selettore frase/immagine/GIF e un pulsante di salvataggio. Per i media inserire un URL oppure un percorso `/media/nome.gif`: questa versione non comprende il caricamento di file dal pannello. Il salvataggio aggiorna `phrases.json` sul computer che esegue il server e persiste al riavvio.
 
 Le caselle scartate o in coda non sono modificabili. **Reset di tutte le caselle** cancella lo stato di apertura e la coda su tutti i dispositivi, conservando i contenuti. Il pubblico non ha comandi per richiudere caselle. Il reset annulla anche una grattata parziale; le richieste di apertura della sessione precedente vengono respinte. Il salvataggio delle frasi non riapre le caselle.
+
+## Grattata parziale e apertura televideo
+
+Al primo gesto di grattata la casella viene salvata come scoperta su tutti i dispositivi, anche se il popup viene chiuso prima di completare il gesto. Il contenuto resta visibile nella griglia dopo un ricaricamento o un riavvio del server. Raggiungere il 78% fa partire anche la rivelazione a tutta pagina; una grattata parziale non avvia questa animazione. Solo il reset dalla regia richiude le caselle. L'apertura del popup usa uno zoom a scatti dalla casella con blocchi colore e righe in stile televideo; rispetta la preferenza di movimento ridotto.

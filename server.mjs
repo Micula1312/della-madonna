@@ -6,15 +6,16 @@ const port=Number(process.env.PORT||3000), token=process.env.ADMIN_TOKEN||random
 const phrases=JSON.parse(readFileSync(new URL('./phrases.json',import.meta.url)));
 mkdirSync(new URL('./data/',import.meta.url),{recursive:true});
 const file=new URL('./data/state.json',import.meta.url);
-let state={opened:[],queue:[],active:null,paused:false,epoch:randomBytes(12).toString('hex')};
+let state={opened:[],revealed:[],queue:[],active:null,paused:false,epoch:randomBytes(12).toString('hex')};
 try{state=JSON.parse(readFileSync(file));}catch{}
 state.epoch ||= randomBytes(12).toString('hex');
+state.revealed ||= [...state.opened];
 const clients=new Set();
 function save(){writeFileSync(new URL('./data/state.tmp',import.meta.url),JSON.stringify(state));renameSync(new URL('./data/state.tmp',import.meta.url),file);}
 function snapshot(){return {...state,total:phrases.length,cards:phrases.map((text,i)=>({id:i+1,text:state.opened.includes(i+1)?text:null}))};}
 function publish(){save();const event=`data: ${JSON.stringify(snapshot())}\n\n`;for(const c of clients)c.write(event);}
 let timer;
-function advance(){if(state.paused||state.active||!state.queue.length)return;const id=state.queue.shift();state.opened.push(id);state.active={id,text:phrases[id-1],until:Date.now()+8500};publish();schedule();}
+function advance(){if(state.paused||state.active||!state.queue.length)return;const id=state.queue.shift();if(!state.opened.includes(id))state.opened.push(id);state.revealed.push(id);state.active={id,text:phrases[id-1],until:Date.now()+8500};publish();schedule();}
 function schedule(){clearTimeout(timer);if(state.active)timer=setTimeout(()=>{state.active=null;publish();advance();},Math.max(0,state.active.until-Date.now()));}
 if(state.active)schedule();else advance();
 function authorized(req){const provided=Buffer.from(req.headers.authorization||'');const expected=Buffer.from(`Bearer ${token}`);return provided.length===expected.length&&timingSafeEqual(provided,expected);}
@@ -23,7 +24,8 @@ if(req.method==='GET'&&url.pathname==='/events'){res.writeHead(200,{'Content-Typ
 if(req.method==='GET'&&url.pathname==='/api/peek'){const id=Number(url.searchParams.get('id'));if(!Number.isInteger(id)||id<1||id>phrases.length)return reply(400,{error:'Casella non valida'});return reply(200,{content:phrases[id-1]});}
 if(req.method==='GET'&&url.pathname==='/api/state')return reply(200,snapshot());
 if(req.method==='POST'&&url.pathname.startsWith('/api/')){try{let body='';for await(const chunk of req){body+=chunk;if(body.length>2048)return reply(413,{error:'Richiesta troppo grande'});}const data=JSON.parse(body||'{}');
-if(url.pathname==='/api/open'){const id=data.id;if(!Number.isInteger(id)||id<1||id>phrases.length)return reply(400,{error:'Casella non valida'});if(data.epoch&&data.epoch!==state.epoch)return reply(409,{error:'Il calendario è stato resettato. Scegli di nuovo una casella.'});if(state.paused)return reply(409,{error:'Un momento: gli scarti sono in pausa.'});if(state.opened.includes(id)||state.queue.includes(id))return reply(409,{error:'Questa casella è già stata scelta.'});state.queue.push(id);publish();advance();return reply(200,{ok:true});}
+if(url.pathname==='/api/scratch'){const id=data.id;if(!Number.isInteger(id)||id<1||id>phrases.length)return reply(400,{error:'Casella non valida'});if(data.epoch!==state.epoch)return reply(409,{error:'Il calendario è stato resettato.'});if(state.paused)return reply(409,{error:'Gli scarti sono in pausa.'});if(!state.opened.includes(id)){state.opened.push(id);publish();}return reply(200,{ok:true});}
+if(url.pathname==='/api/open'){const id=data.id;if(!Number.isInteger(id)||id<1||id>phrases.length)return reply(400,{error:'Casella non valida'});if(data.epoch&&data.epoch!==state.epoch)return reply(409,{error:'Il calendario è stato resettato. Scegli di nuovo una casella.'});if(state.paused)return reply(409,{error:'Un momento: gli scarti sono in pausa.'});if(state.revealed.includes(id)||state.queue.includes(id))return reply(409,{error:'Questa casella è già stata scelta.'});state.queue.push(id);publish();advance();return reply(200,{ok:true});}
 if(!authorized(req))return reply(401,{error:'Chiave regia non valida'});
 if(url.pathname==='/api/catalog')return reply(200,{cards:phrases.map((value,i)=>({id:i+1,content:value})),epoch:state.epoch});
 if(url.pathname==='/api/content'){
@@ -34,7 +36,7 @@ let value;if(content.type==='text'){if(typeof content.text!=='string'||!content.
 else{if(typeof content.src!=='string'||content.src.length>1200||!(/^(https?:\/\/|\/media\/)/.test(content.src)))return reply(400,{error:'Usa un URL http/https o un percorso /media/'});value={type:content.type,src:content.src,alt:String(content.alt||'').slice(0,300)};}
 const updated=phrases.map((v,i)=>i===id-1?value:v);writeFileSync(new URL('./phrases.tmp',import.meta.url),JSON.stringify(updated,null,2)+'\n');renameSync(new URL('./phrases.tmp',import.meta.url),new URL('./phrases.json',import.meta.url));phrases[id-1]=value;publish();return reply(200,{ok:true});}
 if(url.pathname==='/api/pause')state.paused=Boolean(data.paused);
-else if(url.pathname==='/api/reset'){clearTimeout(timer);state={opened:[],queue:[],active:null,paused:false,epoch:randomBytes(12).toString('hex')};}
+else if(url.pathname==='/api/reset'){clearTimeout(timer);state={opened:[],revealed:[],queue:[],active:null,paused:false,epoch:randomBytes(12).toString('hex')};}
 else return reply(404,{error:'Percorso non trovato'});
 publish();advance();return reply(200,{ok:true});}catch{return reply(400,{error:'Richiesta non valida'});}}
 if(req.method!=='GET')return reply(405,{error:'Metodo non consentito'});

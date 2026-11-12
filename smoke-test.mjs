@@ -32,6 +32,19 @@ try{
  assert.equal((await(await fetch(base+'/api/peek?id=1')).json()).content.text,'Test regia');
  state=await(await fetch(base+'/api/state')).json();
  assert.deepEqual(state.opened,[]);assert.equal(state.active,null);
+ const partialEpoch=state.epoch;
+ assert.equal((await post('scratch',{id:3,epoch:partialEpoch})).status,200);
+ state=await(await fetch(base+'/api/state')).json();
+ assert.deepEqual(state.opened,[3]);assert.equal(state.active,null);assert.ok(state.cards[2].text);
+ assert.equal((await post('content',{id:3,content:{type:'text',text:'Overwrite'}},'test-key')).status,409);
+ // Re-reading state and disk must retain a partial scratch without triggering a reveal.
+ assert.ok((await(await fetch(base+'/api/state')).json()).opened.includes(3));
+ const disk=JSON.parse(readFileSync(new URL('./data/state.json',import.meta.url)));assert.ok(disk.opened.includes(3));assert.equal(disk.active,null);
+ assert.equal((await post('open',{id:3,epoch:partialEpoch})).status,200);
+ assert.equal((await post('open',{id:3,epoch:partialEpoch})).status,409);
+ state=await(await fetch(base+'/api/state')).json();assert.deepEqual(state.opened,[3]);assert.equal(state.active.id,3);
+ await post('reset',{},'test-key');state=await(await fetch(base+'/api/state')).json();assert.deepEqual(state.opened,[]);assert.deepEqual(state.revealed,[]);
+ assert.equal((await post('scratch',{id:3,epoch:partialEpoch})).status,409);
  for(const path of ['/','/regia','/proiezione','/app.js','/style.css'])assert.equal((await fetch(base+path)).status,200);
- console.log('PASS: simultaneous reservation, queue, hidden phrases, admin authorization, pause, reset and routes');
+ console.log('PASS: simultaneous reservation, queue, hidden phrases, admin authorization, pause, partial scratch persistence, reset and routes');
 }finally{p.kill();writeFileSync(phrasesFile,originalPhrases);}
