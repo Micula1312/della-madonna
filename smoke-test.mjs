@@ -6,6 +6,9 @@ try{
  await new Promise((resolve,reject)=>{p.stdout.on('data',chunk=>{if(chunk.toString().includes('Partecipazione:'))resolve();});p.once('error',reject);p.once('exit',()=>reject(Error('Server exited')));});
  const post=(path,data,key)=>fetch(base+'/api/'+path,{method:'POST',headers:{'Content-Type':'application/json',...(key?{Authorization:'Bearer '+key}:{})},body:JSON.stringify(data)});
  assert.equal((await post('reset',{},'test-key')).status,200);
+ assert.equal((await fetch(base+'/api/peek?id=1')).status,200);
+ assert.equal((await fetch(base+'/api/peek?id=999')).status,400);
+ assert.deepEqual((await(await fetch(base+'/api/state')).json()).opened,[]);
  const responses=await Promise.all([post('open',{id:1}),post('open',{id:1})]);
  assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);
  assert.equal((await post('reset',{})).status,401);
