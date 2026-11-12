@@ -13,7 +13,7 @@ function save(){writeFileSync(new URL('./data/state.tmp',import.meta.url),JSON.s
 function snapshot(){return {...state,total:phrases.length,cards:phrases.map((text,i)=>({id:i+1,text:state.opened.includes(i+1)?text:null}))};}
 function publish(){save();const event=`data: ${JSON.stringify(snapshot())}\n\n`;for(const c of clients)c.write(event);}
 let timer;
-function advance(){if(state.paused||state.active||!state.queue.length)return;const id=state.queue.shift();state.opened.push(id);state.active={id,text:phrases[id-1],until:Date.now()+6500};publish();schedule();}
+function advance(){if(state.paused||state.active||!state.queue.length)return;const id=state.queue.shift();state.opened.push(id);state.active={id,text:phrases[id-1],until:Date.now()+8500};publish();schedule();}
 function schedule(){clearTimeout(timer);if(state.active)timer=setTimeout(()=>{state.active=null;publish();advance();},Math.max(0,state.active.until-Date.now()));}
 if(state.active)schedule();else advance();
 function authorized(req){const provided=Buffer.from(req.headers.authorization||'');const expected=Buffer.from(`Bearer ${token}`);return provided.length===expected.length&&timingSafeEqual(provided,expected);}
@@ -28,6 +28,7 @@ else if(url.pathname==='/api/reset'){clearTimeout(timer);state={opened:[],queue:
 else return reply(404,{error:'Percorso non trovato'});
 publish();advance();return reply(200,{ok:true});}catch{return reply(400,{error:'Richiesta non valida'});}}
 if(req.method!=='GET')return reply(405,{error:'Metodo non consentito'});
+if(url.pathname.startsWith('/media/')){const name=url.pathname.slice(7);if(!/^[a-zA-Z0-9_.-]+$/.test(name))return reply(400,{error:'Nome file non valido'});const ext=name.split('.').pop().toLowerCase(),types={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',avif:'image/avif'};if(!types[ext])return reply(404,{error:'Formato non supportato'});try{const bytes=readFileSync(new URL('./public/media/'+name,import.meta.url));res.writeHead(200,{'Content-Type':types[ext]});return res.end(bytes);}catch{return reply(404,{error:'Immagine non trovata'});}}
 const paths={'/':'index.html','/proiezione':'index.html','/regia':'index.html','/style.css':'style.css','/app.js':'app.js'};const name=paths[url.pathname];if(!name)return reply(404,{error:'Pagina non trovata'});res.writeHead(200,{'Content-Type':name.endsWith('.css')?'text/css':name.endsWith('.js')?'text/javascript':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(readFileSync(new URL(`./public/${name}`,import.meta.url)));
 });
 const heartbeat=setInterval(()=>{for(const c of clients)c.write(': heartbeat\n\n');},15000);heartbeat.unref();

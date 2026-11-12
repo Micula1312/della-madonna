@@ -24,7 +24,7 @@ Per una chiave regia stabile, impostare ADMIN_TOKEN nell'ambiente prima dell'avv
 
 Modificare `phrases.json` e riavviare. Il numero di caselle segue la lunghezza dell'elenco. Fare reset prima di cambiare numero o ordine dei testi. Le frasi si inseriscono come testo, senza interpretare HTML.
 
-Il server prenota ogni casella una volta sola, serializza gli scarti e aggiorna tutti i dispositivi tramite Server-Sent Events. Una frase resta in evidenza per 6,5 secondi. Stato e coda vengono salvati in `data/state.json` e ripresi al riavvio. Il reset li cancella. Un solo processo server deve usare la cartella dati.
+Il server prenota ogni casella una volta sola, serializza gli scarti e aggiorna tutti i dispositivi tramite Server-Sent Events. Una frase resta in evidenza per 8,5 secondi. Stato e coda vengono salvati in `data/state.json` e ripresi al riavvio. Il reset li cancella. Un solo processo server deve usare la cartella dati.
 
 ## QR e rete
 
@@ -32,4 +32,20 @@ Questa versione comprende il sito e la sincronizzazione. Configurazione dell'acc
 
 ## Limiti del prototipo
 
-Pensato per un'installazione su rete locale fidata. L'accesso pubblico non richiede un account; non limita gli scarti per persona. Prima di esporlo su internet servono HTTPS, limitazione delle richieste e una scelta sul modello di partecipazione. La versione online autonoma con rivelazione sul telefono resta da aggiungere: qui la rivelazione principale è sulla pagina di proiezione. GitHub conserva il codice: GitHub Pages non esegue questo server Node.
+Pensato per un'installazione su rete locale fidata. L'accesso pubblico non richiede un account; non limita gli scarti per persona. Prima di esporlo su internet servono HTTPS, limitazione delle richieste e una scelta sul modello di partecipazione. La rivelazione animata compare sia sui telefoni sia sulla proiezione. GitHub conserva il codice: GitHub Pages non esegue questo server Node.
+
+## Griglia e scarto
+
+Campo 12 × 12 con 24 caselle numerate sparse. Selezionare una casella e grattare con mouse o dito: quando circa il 38% della superficie è rimosso, la scelta entra in coda. È disponibile anche un pulsante per aprire senza trascinamento. Il contenuto emerge, si ingrandisce a tutta pagina e poi rientra nella casella; la proiezione segue la stessa sequenza. Con movimento ridotto del dispositivo, la rivelazione evita zoom e spostamenti.
+
+`phrases.json` accetta stringhe oppure oggetti:
+
+```json
+[
+  "Una frase da scoprire.",
+  {"type":"image","src":"/media/immagine.jpg","alt":"Descrizione dell’immagine"},
+  {"type":"gif","src":"/media/animazione.gif","alt":"Descrizione dell’animazione"}
+]
+```
+
+Inserire i file in `public/media/`. Si possono usare anche URL HTTPS di immagini o GIF, che richiedono internet sui dispositivi. Le caselle non aperte non ricevono il contenuto dal server. I testi attuali sono provvisori; nessuna immagine o GIF definitiva è inclusa.
