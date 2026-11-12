@@ -36,7 +36,7 @@ Pensato per un'installazione su rete locale fidata. L'accesso pubblico non richi
 
 ## Griglia e scarto
 
-Campo 12 × 12 con 24 caselle numerate sparse. Il primo clic apre un piccolo foro nella copertura, direttamente nella casella e senza popup. Grattare con mouse o dito: quando circa il 78% della superficie è rimosso, la scelta entra in coda. Da tastiera: Tab per scegliere una casella, Invio per mostrare il foro e nuovamente Invio per aprire senza trascinare. Il contenuto emerge, si ingrandisce a tutta pagina e poi rientra nella casella; la proiezione segue la stessa sequenza. Con movimento ridotto del dispositivo, la rivelazione evita zoom e spostamenti.
+Campo 12 × 12 con 24 caselle numerate sparse. Il clic ingrandisce la casella in un popup senza didascalie o pulsanti. Grattare con mouse o dito: quando circa il 78% della superficie è rimosso, la scelta entra in coda. Non è presente un comando per saltare la grattata. Con tastiera: Tab e Invio selezionano la casella, le frecce spostano il pennello per grattare, Escape chiude il popup. Il contenuto emerge, si ingrandisce a tutta pagina e poi rientra nella casella; la proiezione segue la stessa sequenza. Con movimento ridotto del dispositivo, la rivelazione evita zoom e spostamenti.
 
 `phrases.json` accetta stringhe oppure oggetti:
 
@@ -49,3 +49,5 @@ Campo 12 × 12 con 24 caselle numerate sparse. Il primo clic apre un piccolo for
 ```
 
 Inserire i file in `public/media/`. Si possono usare anche URL HTTPS di immagini o GIF, che richiedono internet sui dispositivi. Il contenuto della singola casella viene richiesto al primo contatto, per mostrarlo sotto la copertura. Non viene marcato come aperto finché non si supera la soglia; la copertura è un effetto visivo, non un sistema per proteggere contenuti segreti. I testi attuali sono provvisori; nessuna immagine o GIF definitiva è inclusa.
+
+Aspetto pubblico ispirato a un calendario di carta: azzurro, numeri avorio, grana leggera e piccoli punti chiari, senza bordi della griglia, intestazioni o didascalie. I comandi rimangono nella pagina privata di regia.
