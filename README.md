@@ -51,3 +51,9 @@ Campo 12 × 12 con 24 caselle numerate sparse. Il clic ingrandisce la casella in
 Inserire i file in `public/media/`. Si possono usare anche URL HTTPS di immagini o GIF, che richiedono internet sui dispositivi. Il contenuto della singola casella viene richiesto al primo contatto, per mostrarlo sotto la copertura. Non viene marcato come aperto finché non si supera la soglia; la copertura è un effetto visivo, non un sistema per proteggere contenuti segreti. I testi attuali sono provvisori; nessuna immagine o GIF definitiva è inclusa.
 
 Aspetto pubblico ispirato a un calendario di carta: azzurro, numeri avorio, grana leggera e piccoli punti chiari, senza bordi della griglia, intestazioni o didascalie. I comandi rimangono nella pagina privata di regia.
+
+## Regia e inserimento contenuti
+
+Aprire `/regia`, inserire la chiave stampata dal server e premere **Carica contenuti**. Ogni casella ha un selettore frase/immagine/GIF e un pulsante di salvataggio. Per i media inserire un URL oppure un percorso `/media/nome.gif`: questa versione non comprende il caricamento di file dal pannello. Il salvataggio aggiorna `phrases.json` sul computer che esegue il server e persiste al riavvio.
+
+Le caselle scartate o in coda non sono modificabili. **Reset di tutte le caselle** cancella lo stato di apertura e la coda su tutti i dispositivi, conservando i contenuti. Il pubblico non ha comandi per richiudere caselle. Il reset annulla anche una grattata parziale; le richieste di apertura della sessione precedente vengono respinte. Il salvataggio delle frasi non riapre le caselle.
